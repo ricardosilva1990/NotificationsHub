@@ -20,14 +20,6 @@ public final class NotificationsHub: @unchecked Sendable {
      
     /// Registers `handler` to be called with every message posted to
     /// `topic` from this point forward.
-    ///
-    /// - Parameters:
-    ///   - topic: The channel to listen on.
-    ///   - queue: If provided, `handler` is dispatched onto this queue
-    ///     instead of being invoked synchronously on the posting thread.
-    ///   - handler: Called once per message posted to `topic`.
-    /// - Returns: A `Subscription` token. Keep it alive to keep
-    ///   listening; unsubscribe or deallocate it to stop.
     @discardableResult
     public func subscribe<Message>(
         to topic: Topic<Message>,
@@ -55,11 +47,36 @@ public final class NotificationsHub: @unchecked Sendable {
         return .init(id: id, key: key, hub: self)
     }
     
+    /// Stops delivery to `subscription`.
     public func unsubscribe(_ subscription: Subscription) {
         subscription.cancel()
     }
     
-    func removeSubscription(id: UUID, key: TopicKey) {}
+    /// Delivers `message` to every subscriber currently registered on `topic`.
+    public func post<Message>(_ message: Message, to topic: Topic<Message>) {
+        let key = TopicKey(name: topic.name, messageType: .init(Message.self))
+        
+        let bucket = withLock { buckets[key] }
+        guard let bucket else { return }
+        
+        for entry in bucket.entries.values {
+            if let queue = entry.queue {
+                let box = UncheckedSendableBox(work: { entry.handler(message) })
+                queue.async { box.work() }
+            } else {
+                entry.handler(message)
+            }
+        }
+    }
+    
+    func removeSubscription(id: UUID, key: TopicKey) {
+        withLock {
+            buckets[key]?.entries.removeValue(forKey: id)
+            if buckets[key]?.entries.isEmpty == true {
+                buckets.removeValue(forKey: key)
+            }
+        }
+    }
 }
 
 // MARK: - Private supporting structures.
@@ -84,4 +101,8 @@ private extension NotificationsHub {
         
         return body()
     }
+}
+
+private struct UncheckedSendableBox: @unchecked Sendable {
+    let work: () -> Void
 }
