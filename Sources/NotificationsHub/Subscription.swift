@@ -7,15 +7,15 @@
 
 import Foundation
 
-final class Subscription {
+public final class Subscription {
     private let id: UUID
     private let key: TopicKey
-    private weak var hub: NotificationHub?
+    private weak var hub: NotificationsHub?
     
     private let stateLock = NSLock()
     private var isCancelled = false
     
-    private init(_ id: UUID, _ key: TopicKey, _ hub: NotificationHub) {
+    init(id: UUID, key: TopicKey, hub: NotificationsHub) {
         self.id = id
         self.key = key
         self.hub = hub

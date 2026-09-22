@@ -6,8 +6,8 @@
 //
 
 /// A strongly-typed, named channel of messages.
-struct Topic<Message>: Hashable, Equatable {
-    private let name: String
+public struct Topic<Message>: Hashable, Equatable {
+    let name: String
     
     init(_ name: String) {
         self.name = name

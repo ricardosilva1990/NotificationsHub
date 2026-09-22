@@ -7,6 +7,11 @@
 
 /// Type-erased key identifying a topic's subscriber bucket.
 struct TopicKey: Hashable {
-    let name: String
-    let messageType: ObjectIdentifier
+    private let name: String
+    private let messageType: ObjectIdentifier
+    
+    init(name: String, messageType: ObjectIdentifier) {
+        self.name = name
+        self.messageType = messageType
+    }
 }
