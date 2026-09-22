@@ -55,6 +55,10 @@ public final class NotificationsHub: @unchecked Sendable {
         return .init(id: id, key: key, hub: self)
     }
     
+    public func unsubscribe(_ subscription: Subscription) {
+        subscription.cancel()
+    }
+    
     func removeSubscription(id: UUID, key: TopicKey) {}
 }
 
