@@ -28,13 +28,12 @@ public final class Subscription {
     /// Stops delivery of further messages to this subscription.
     /// Idempotent, and safe to call from any thread.
     func cancel() {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        
-        guard !isCancelled else { return }
-        isCancelled = true
-        
-        hub?.removeSubscription(id: id, key: key)
+        withLock(stateLock) {
+            guard !isCancelled else { return }
+            isCancelled = true
+            
+            hub?.removeSubscription(id: id, key: key)
+        }
     }
 }
 

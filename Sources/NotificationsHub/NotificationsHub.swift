@@ -38,7 +38,7 @@ public final class NotificationsHub: @unchecked Sendable {
         let key = TopicKey(name: topic.name, messageType: .init(Message.self))
         let id = UUID()
         
-        withLock {
+        withLock(lock) {
             var bucket = buckets[key] ?? Bucket()
             bucket.entries[id] = .init(handler: erasedHandler, queue: queue)
             buckets[key] = bucket
@@ -56,7 +56,7 @@ public final class NotificationsHub: @unchecked Sendable {
     public func post<Message>(_ message: Message, to topic: Topic<Message>) {
         let key = TopicKey(name: topic.name, messageType: .init(Message.self))
         
-        let bucket = withLock { buckets[key] }
+        let bucket = withLock(lock) { buckets[key] }
         guard let bucket else { return }
         
         for entry in bucket.entries.values {
@@ -70,7 +70,7 @@ public final class NotificationsHub: @unchecked Sendable {
     }
     
     func removeSubscription(id: UUID, key: TopicKey) {
-        withLock {
+        withLock(lock) {
             buckets[key]?.entries.removeValue(forKey: id)
             if buckets[key]?.entries.isEmpty == true {
                 buckets.removeValue(forKey: key)
@@ -90,19 +90,4 @@ private extension NotificationsHub {
     struct Bucket {
         var entries: [UUID: Entry] = [:]
     }
-}
-
-private extension NotificationsHub {
-    /// Runs `body` while holding `lock`, releasing it afterward via
-    /// `defer` — including on early return.
-    func withLock<T>(_ body: () -> T) -> T {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        return body()
-    }
-}
-
-private struct UncheckedSendableBox: @unchecked Sendable {
-    let work: () -> Void
 }
