@@ -15,8 +15,6 @@ public final class NotificationsHub: @unchecked Sendable {
     
     private let lock = NSLock()
     private var buckets = [TopicKey: Bucket]()
-    
-    // MARK: Subscribe
      
     /// Registers `handler` to be called with every message posted to
     /// `topic` from this point forward.
@@ -76,6 +74,12 @@ public final class NotificationsHub: @unchecked Sendable {
                 buckets.removeValue(forKey: key)
             }
         }
+    }
+    
+    /// Number of active subscribers on `topic`.
+    public func subscriberCount<Message>(for topic: Topic<Message>) -> Int {
+        let key = TopicKey(name: topic.name, messageType: ObjectIdentifier(Message.self))
+        return withLock(lock) { buckets[key]?.entries.count ?? 0 }
     }
 }
 

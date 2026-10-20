@@ -6,10 +6,12 @@
 //
 
 /// A strongly-typed, named channel of messages.
-public struct Topic<Message>: Hashable, Equatable {
+public struct Topic<Message>: Hashable {
     let name: String
     
     init(_ name: String) {
         self.name = name
     }
 }
+
+extension Topic: Sendable where Message: Sendable {}
